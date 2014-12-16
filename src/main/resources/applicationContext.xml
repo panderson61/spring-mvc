@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor"/>
+    <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
+
+    <!--<bean id="JpaSessionManager" class="com.picsauditing.jpa.util.JpaSessionManager" scope="prototype">-->
+    <!--<constructor-arg ref="entityManagerFactory"/>-->
+    <!--</bean>-->
+
+    <bean id="TestDAO" class="com.alex.test.dao.TestDAO"/>
+
+    <bean id="Publisher" class="com.picsauditing.lms.messaging.MessageService"/>
+
+    <!--<bean id="TransformerRegistry" class="java.util.HashMap">-->
+        <!--<constructor-arg name="m">-->
+            <!--<map>-->
+                <!--<entry key="" value-ref=""/>-->
+            <!--</map>-->
+        <!--</constructor-arg>-->
+    <!--</bean>-->
+
+    <!--  JPA implementation -->
+    <bean id="entityManagerFactory"
+          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="jndiDataSource"/>
+        <property name="persistenceUnitName" value="punit"/>
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+                <property name="showSql" value="false"/>
+                <property name="database" value="MYSQL"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="jndiDataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiName" value="java:comp/env/jdbc/lms"/>
+        <property name="resourceRef" value="false"/>
+        <property name="defaultObject" value="dummy"></property>
+    </bean>
+
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean"
+          lazy-init="false">
+        <property name="targetObject" ref="jndiDataSource"/>
+        <property name="targetMethod" value="addConnectionProperty"/>
+        <property name="arguments">
+            <list>
+                <value>characterEncoding</value>
+                <value>UTF-8</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="transactionManager"
+          class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+
+    <!-- The 'proxy-target-class="true"' is to correctly autowire classes that implement interfaces.
+     e.g ReportUserDAO. All it means is that Spring will inject the concrete class instead of an
+     auto-proxied object that only implements the interface. -->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+
+    <!-- the transactional advice (i.e. what 'happens'; see the <aop:advisor/> bean below) -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <!-- the transactional semantics... -->
+        <tx:attributes>
+            <!-- all methods starting with 'get' are read-only (optimization) -->
+            <tx:method name="get*" read-only="true"/>
+            <!-- other methods use the default transaction settings (see below) -->
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+
+
+</beans>
