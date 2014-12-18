@@ -14,17 +14,17 @@ import java.util.Date;
 @RequestMapping("/")
 public class HelloController {
 
-	@Autowired
-	private TestDAO testDAO;
+//	@Autowired
+//	private TestDAO testDAO;
 
 	@RequestMapping(method = RequestMethod.GET)
 	public String printWelcome(ModelMap model) {
 		model.addAttribute("message", "Hello world!");
 
-		Test test = new Test();
-		test.setName("Alex");
-		test.setTimestamp(new Date());
-		testDAO.save(test);
+//		Test test = new Test();
+//		test.setName("Alex");
+//		test.setTimestamp(new Date());
+//		testDAO.save(test);
 
 		return "hello";
 	}
