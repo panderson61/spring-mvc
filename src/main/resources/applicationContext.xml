@@ -2,51 +2,63 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
     http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
 
-    <!--<bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor"/>-->
-    <!--<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>-->
+    <!--<context:property-placeholder location="file:connection.properties"/>-->
+    <context:property-placeholder location="classpath*:connection.properties"/>
+
+    <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor"/>
+    <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
 
     <!--<bean id="JpaSessionManager" class="com.picsauditing.jpa.util.JpaSessionManager" scope="prototype">-->
     <!--<constructor-arg ref="entityManagerFactory"/>-->
     <!--</bean>-->
 
-    <!--<bean id="TestDAO" class="com.alex.test.dao.TestDAO"/>-->
-
-    <bean id="Publisher" class="com.picsauditing.lms.messaging.MessageService"/>
-
-    <!--<bean id="TransformerRegistry" class="java.util.HashMap">-->
-        <!--<constructor-arg name="m">-->
-            <!--<map>-->
-                <!--<entry key="" value-ref=""/>-->
-            <!--</map>-->
-        <!--</constructor-arg>-->
-    <!--</bean>-->
+    <bean id="TestDAO" class="com.alex.test.dao.TestDAO"/>
 
     <!--  JPA implementation -->
-    <!--<bean id="entityManagerFactory"-->
-          <!--class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">-->
-        <!--<property name="dataSource" ref="jndiDataSource"/>-->
-        <!--<property name="persistenceUnitName" value="punit"/>-->
-        <!--<property name="jpaVendorAdapter">-->
-            <!--<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">-->
-                <!--<property name="showSql" value="false"/>-->
-                <!--<property name="database" value="MYSQL"/>-->
-            <!--</bean>-->
-        <!--</property>-->
-    <!--</bean>-->
+    <bean id="entityManagerFactory"
+          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="persistenceUnitName" value="punit"/>
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+                <property name="showSql" value="false"/>
+                <property name="database" value="MYSQL"/>
+            </bean>
+        </property>
+    </bean>
 
-    <!--<bean id="jndiDataSource" class="org.springframework.jndi.JndiObjectFactoryBean">-->
-        <!--<property name="jndiName" value="java:comp/env/jdbc/lms"/>-->
-        <!--<property name="resourceRef" value="false"/>-->
-        <!--<property name="defaultObject" value="dummy"></property>-->
-    <!--</bean>-->
+    <bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource"
+          destroy-method="close">
+        <property name="dataSource" ref="dataSourceTemplate"/>
+        <property name="maxActive" value="60"/>
+        <property name="minIdle" value="1"/>
+        <property name="maxIdle" value="5"/>
+        <property name="maxWait" value="10000"/>
+        <property name="logAbandoned" value="true"/>
+        <property name="removeAbandoned" value="true"/>
+        <property name="validationQuery" value="SELECT 1"/>
+        <property name="validationInterval" value="30000"/>
+        <property name="removeAbandonedTimeout" value="5400"/>
+        <property name="testOnBorrow" value="true"/>
+    </bean>
+
+    <bean id="dataSourceTemplate"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${jdbc.lms-gateway.driverClassName}"/>
+        <property name="url" value="${jdbc.lms-gateway.url}"/>
+        <property name="username" value="${jdbc.lms-gateway.username}"/>
+        <property name="password" value="${jdbc.lms-gateway.password}"/>
+    </bean>
 
     <!--<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean"-->
           <!--lazy-init="false">-->
-        <!--<property name="targetObject" ref="jndiDataSource"/>-->
-        <!--<property name="targetMethod" value="addConnectionProperty"/>-->
+        <!--<property name="targetObject" ref="dataSource"/>-->
+        <!--&lt;!&ndash;<property name="targetMethod" value="addConnectionProperty"/>&ndash;&gt;-->
         <!--<property name="arguments">-->
             <!--<list>-->
                 <!--<value>characterEncoding</value>-->
@@ -55,26 +67,26 @@
         <!--</property>-->
     <!--</bean>-->
 
-    <!--<bean id="transactionManager"-->
-          <!--class="org.springframework.orm.jpa.JpaTransactionManager">-->
-        <!--<property name="entityManagerFactory" ref="entityManagerFactory"/>-->
-    <!--</bean>-->
+    <bean id="transactionManager"
+          class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
 
     <!--&lt;!&ndash; The 'proxy-target-class="true"' is to correctly autowire classes that implement interfaces.-->
-     <!--e.g ReportUserDAO. All it means is that Spring will inject the concrete class instead of an-->
-     <!--auto-proxied object that only implements the interface. &ndash;&gt;-->
-    <!--<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>-->
+    <!--e.g ReportUserDAO. All it means is that Spring will inject the concrete class instead of an-->
+    <!--auto-proxied object that only implements the interface. &ndash;&gt;-->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
 
     <!--&lt;!&ndash; the transactional advice (i.e. what 'happens'; see the <aop:advisor/> bean below) &ndash;&gt;-->
-    <!--<tx:advice id="txAdvice" transaction-manager="transactionManager">-->
-        <!--&lt;!&ndash; the transactional semantics... &ndash;&gt;-->
-        <!--<tx:attributes>-->
-            <!--&lt;!&ndash; all methods starting with 'get' are read-only (optimization) &ndash;&gt;-->
-            <!--<tx:method name="get*" read-only="true"/>-->
-            <!--&lt;!&ndash; other methods use the default transaction settings (see below) &ndash;&gt;-->
-            <!--<tx:method name="*"/>-->
-        <!--</tx:attributes>-->
-    <!--</tx:advice>-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <!-- the transactional semantics... -->
+        <tx:attributes>
+            <!-- all methods starting with 'get' are read-only (optimization) -->
+            <tx:method name="get*" read-only="true"/>
+            <!-- other methods use the default transaction settings (see below) -->
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
 
 
 </beans>
